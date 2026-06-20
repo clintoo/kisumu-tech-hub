@@ -17,15 +17,6 @@ export function Hero() {
       <div className="absolute inset-0 bg-gradient-to-tr from-primary/20 via-transparent to-primary-glow/10 mix-blend-screen" />
 
       <div className="relative mx-auto max-w-7xl px-5 sm:px-8">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-          className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-primary/30 bg-primary/10 text-xs sm:text-sm text-primary-glow"
-        >
-          <Sparkles className="w-3.5 h-3.5" />
-          Building Kisumu's developer community
-        </motion.div>
 
         <motion.h1
           initial={{ opacity: 0, y: 30 }}

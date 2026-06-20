@@ -10,7 +10,13 @@ import { z } from "zod";
 import { ArrowLeft } from "lucide-react";
 
 export const Route = createFileRoute("/auth")({
-  head: () => ({ meta: [{ title: "Admin Sign in — Zone01 Kisumu Events" }, { name: "robots", content: "noindex" }] }),
+  ssr: false,
+  head: () => ({
+    meta: [
+      { title: "Admin Sign in — Zone01 Kisumu Events" },
+      { name: "robots", content: "noindex" },
+    ],
+  }),
   component: Auth,
 });
 
@@ -25,6 +31,15 @@ function Auth() {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
+    const allowedFromAdmin = sessionStorage.getItem("admin-auth-entry") === "1";
+
+    if (!allowedFromAdmin) {
+      navigate({ to: "/", replace: true });
+      return;
+    }
+
+    sessionStorage.removeItem("admin-auth-entry");
+
     supabase.auth.getUser().then(({ data }) => {
       if (data.user) navigate({ to: "/admin" });
     });
@@ -60,13 +75,20 @@ function Auth() {
   return (
     <div className="min-h-screen flex items-center justify-center px-5 bg-gradient-to-br from-background via-background to-card">
       <div className="w-full max-w-md">
-        <Link to="/" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground mb-6">
+        <Link
+          to="/"
+          className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground mb-6"
+        >
           <ArrowLeft className="w-4 h-4" /> Back to site
         </Link>
         <Card className="p-8 bg-card/80 backdrop-blur border-border shadow-card">
-          <h1 className="font-display text-3xl font-bold">Admin {mode === "signin" ? "Sign in" : "Sign up"}</h1>
+          <h1 className="font-display text-3xl font-bold">
+            Admin {mode === "signin" ? "Sign in" : "Sign up"}
+          </h1>
           <p className="text-sm text-muted-foreground mt-2">
-            {mode === "signin" ? "Manage events and registrations." : "The first signup becomes the admin."}
+            {mode === "signin"
+              ? "Manage events and registrations."
+              : "The first signup becomes the admin."}
           </p>
           <form onSubmit={onSubmit} className="mt-6 space-y-4">
             <div>
