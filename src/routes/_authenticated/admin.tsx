@@ -442,6 +442,46 @@ function EventDialog({
   onSaved: () => void;
 }) {
   const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [imageUrl, setImageUrl] = useState<string>(event?.image_url ?? "");
+
+  // Reset image when opening for a different event
+  useEffect(() => {
+    setImageUrl(event?.image_url ?? "");
+  }, [event, open]);
+
+  async function handleFileUpload(file: File) {
+    if (!file.type.startsWith("image/")) {
+      toast.error("Please select an image file");
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("Image must be under 5 MB");
+      return;
+    }
+    setUploading(true);
+    const ext = file.name.split(".").pop() || "jpg";
+    const path = `${crypto.randomUUID()}.${ext}`;
+    const { error: upErr } = await supabase.storage
+      .from("event-images")
+      .upload(path, file, { cacheControl: "3600", upsert: false, contentType: file.type });
+    if (upErr) {
+      setUploading(false);
+      toast.error(upErr.message);
+      return;
+    }
+    // Private bucket: create a very long-lived signed URL (~10 years)
+    const { data: signed, error: sErr } = await supabase.storage
+      .from("event-images")
+      .createSignedUrl(path, 60 * 60 * 24 * 365 * 10);
+    setUploading(false);
+    if (sErr || !signed?.signedUrl) {
+      toast.error(sErr?.message ?? "Could not get image URL");
+      return;
+    }
+    setImageUrl(signed.signedUrl);
+    toast.success("Image uploaded");
+  }
 
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -450,10 +490,11 @@ function EventDialog({
       title: String(fd.get("title")).trim(),
       description: String(fd.get("description")).trim(),
       date_time: new Date(String(fd.get("date_time"))).toISOString(),
+      ends_at: fd.get("ends_at") ? new Date(String(fd.get("ends_at"))).toISOString() : null,
       location: String(fd.get("location") || "").trim() || null,
       category: String(fd.get("category")) as "workshop" | "mini_conference" | "meetup",
-      status: String(fd.get("status")) as "upcoming" | "live" | "completed",
-      image_url: String(fd.get("image_url") || "").trim() || null,
+      status: String(fd.get("status")) as Event["status"],
+      image_url: imageUrl.trim() || null,
       registration_url: String(fd.get("registration_url") || "").trim() || null,
     };
     if (!payload.title || !payload.description) {
@@ -472,6 +513,7 @@ function EventDialog({
   }
 
   const defaultDt = event ? new Date(event.date_time).toISOString().slice(0, 16) : "";
+  const defaultEnds = event?.ends_at ? new Date(event.ends_at).toISOString().slice(0, 16) : "";
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -506,9 +548,18 @@ function EventDialog({
               />
             </div>
             <div>
-              <Label htmlFor="location">Location</Label>
-              <Input id="location" name="location" defaultValue={event?.location ?? ""} />
+              <Label htmlFor="ends_at">Ends at (optional)</Label>
+              <Input
+                id="ends_at"
+                name="ends_at"
+                type="datetime-local"
+                defaultValue={defaultEnds}
+              />
             </div>
+          </div>
+          <div>
+            <Label htmlFor="location">Location</Label>
+            <Input id="location" name="location" defaultValue={event?.location ?? ""} />
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
@@ -531,20 +582,48 @@ function EventDialog({
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="upcoming">Upcoming</SelectItem>
-                  <SelectItem value="live">Live</SelectItem>
-                  <SelectItem value="completed">Completed</SelectItem>
+                  {STATUS_OPTIONS.map((o) => (
+                    <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
+              <p className="text-[10px] text-muted-foreground mt-1">
+                Status auto-updates from time. Set Postponed / Cancelled manually.
+              </p>
             </div>
           </div>
           <div>
-            <Label htmlFor="image_url">Image URL</Label>
+            <Label>Event image / poster</Label>
+            <div className="mt-2 flex items-center gap-3">
+              <label className="inline-flex items-center gap-2 px-3 py-2 border border-border rounded-md cursor-pointer hover:border-primary/40 text-sm">
+                <Upload className="w-4 h-4" />
+                {uploading ? "Uploading..." : "Upload image"}
+                <input
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  disabled={uploading}
+                  onChange={(e) => {
+                    const f = e.target.files?.[0];
+                    if (f) handleFileUpload(f);
+                    e.target.value = "";
+                  }}
+                />
+              </label>
+              {imageUrl && (
+                <>
+                  <img src={imageUrl} alt="Preview" className="h-14 w-24 object-cover rounded border border-border" />
+                  <Button type="button" size="sm" variant="ghost" onClick={() => setImageUrl("")}>
+                    Remove
+                  </Button>
+                </>
+              )}
+            </div>
             <Input
-              id="image_url"
-              name="image_url"
-              defaultValue={event?.image_url ?? ""}
-              placeholder="https://..."
+              className="mt-2"
+              value={imageUrl}
+              onChange={(e) => setImageUrl(e.target.value)}
+              placeholder="Or paste image URL"
             />
           </div>
           <div>
