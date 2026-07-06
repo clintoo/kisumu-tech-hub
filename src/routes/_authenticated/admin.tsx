@@ -18,8 +18,17 @@ import {
 } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { Pencil, Trash2, Plus, LogOut, Calendar, Users, Image as ImageIcon } from "lucide-react";
+import { Pencil, Trash2, Plus, LogOut, Calendar, Users, Image as ImageIcon, Upload, Share2 } from "lucide-react";
 import { fetchEvents, fetchGallery, type Event, type GalleryImage } from "@/lib/events-api";
+import { toast as _t } from "sonner";
+
+const STATUS_OPTIONS: Array<{ value: Event["status"]; label: string }> = [
+  { value: "upcoming", label: "Upcoming" },
+  { value: "live", label: "Live" },
+  { value: "completed", label: "Completed" },
+  { value: "postponed", label: "Postponed" },
+  { value: "cancelled", label: "Cancelled" },
+];
 
 export const Route = createFileRoute("/_authenticated/admin")({
   head: () => ({
@@ -95,12 +104,24 @@ function AdminPage() {
     qc.invalidateQueries({ queryKey: ["events"] });
   }
 
-  async function toggleStatus(ev: Event) {
-    const next =
-      ev.status === "upcoming" ? "live" : ev.status === "live" ? "completed" : "upcoming";
+  async function setEventStatus(ev: Event, next: Event["status"]) {
+    if (next === ev.status) return;
     const { error } = await supabase.from("events").update({ status: next }).eq("id", ev.id);
     if (error) return toast.error(error.message);
+    toast.success(`Status set to ${next}`);
     qc.invalidateQueries({ queryKey: ["events"] });
+  }
+
+  async function shareEvent(ev: Event) {
+    const url = `${window.location.origin}/events/${ev.id}`;
+    try {
+      if (navigator.share) {
+        await navigator.share({ title: ev.title, url });
+      } else {
+        await navigator.clipboard.writeText(url);
+        toast.success("Link copied");
+      }
+    } catch { /* cancelled */ }
   }
 
   async function handleDeleteGalleryImage(id: string) {
@@ -215,8 +236,16 @@ function AdminPage() {
                 </p>
               </div>
               <div className="flex items-center gap-2">
-                <Button size="sm" variant="outline" onClick={() => toggleStatus(e)}>
-                  Next status
+                <Select value={e.status} onValueChange={(v) => setEventStatus(e, v as Event["status"])}>
+                  <SelectTrigger className="h-9 w-[140px]"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {STATUS_OPTIONS.map((o) => (
+                      <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Button size="sm" variant="ghost" onClick={() => shareEvent(e)} aria-label="Share">
+                  <Share2 className="w-4 h-4" />
                 </Button>
                 <Button
                   size="sm"
