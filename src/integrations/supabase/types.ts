@@ -20,6 +20,7 @@ export type Database = {
           created_at: string
           date_time: string
           description: string
+          ends_at: string | null
           id: string
           image_url: string | null
           location: string | null
@@ -33,6 +34,7 @@ export type Database = {
           created_at?: string
           date_time: string
           description: string
+          ends_at?: string | null
           id?: string
           image_url?: string | null
           location?: string | null
@@ -46,6 +48,7 @@ export type Database = {
           created_at?: string
           date_time?: string
           description?: string
+          ends_at?: string | null
           id?: string
           image_url?: string | null
           location?: string | null
@@ -165,6 +168,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      auto_update_event_statuses: { Args: never; Returns: undefined }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -176,7 +180,12 @@ export type Database = {
     Enums: {
       app_role: "admin" | "user"
       event_category: "workshop" | "mini_conference" | "meetup"
-      event_status: "upcoming" | "live" | "completed"
+      event_status:
+        | "upcoming"
+        | "live"
+        | "completed"
+        | "cancelled"
+        | "postponed"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -306,7 +315,7 @@ export const Constants = {
     Enums: {
       app_role: ["admin", "user"],
       event_category: ["workshop", "mini_conference", "meetup"],
-      event_status: ["upcoming", "live", "completed"],
+      event_status: ["upcoming", "live", "completed", "cancelled", "postponed"],
     },
   },
 } as const
