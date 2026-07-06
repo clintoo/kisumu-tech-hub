@@ -17,9 +17,15 @@ export function EventsSection() {
     return category === "all" ? list : list.filter((e) => e.category === category);
   }
 
-  const upcoming = useMemo(() => filter(events.filter((e) => e.status === "upcoming")), [events, category]);
+  const upcoming = useMemo(
+    () => filter(events.filter((e) => e.status === "upcoming" || e.status === "postponed")),
+    [events, category],
+  );
   const live = useMemo(() => filter(events.filter((e) => e.status === "live")), [events, category]);
-  const completed = useMemo(() => filter(events.filter((e) => e.status === "completed")), [events, category]);
+  const completed = useMemo(
+    () => filter(events.filter((e) => e.status === "completed" || e.status === "cancelled")),
+    [events, category],
+  );
 
   function onRegister(e: Event) {
     setSelected(e);

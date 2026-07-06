@@ -42,7 +42,11 @@ export function RegisterDialog({ event, open, onOpenChange }: { event: Event | n
     });
     setSubmitting(false);
     if (error) {
-      toast.error(error.message);
+      if ((error as { code?: string }).code === "23505" || /duplicate|unique/i.test(error.message)) {
+        toast.error("This email is already registered for this event.");
+      } else {
+        toast.error(error.message);
+      }
       return;
     }
     setDone(true);
