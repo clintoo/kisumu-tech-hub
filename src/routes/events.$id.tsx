@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import type { Event } from "@/lib/events-api";
 import { Navbar } from "@/components/site/Navbar";
 import { Footer } from "@/components/site/Footer";
-import { Button } from "@/components/site/../ui/button";
+import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { RegisterDialog } from "@/components/site/RegisterDialog";
 import { Calendar, MapPin, Share2, ArrowLeft, Radio } from "lucide-react";
