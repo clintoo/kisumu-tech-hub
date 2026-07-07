@@ -12,4 +12,7 @@ export default defineConfig({
     // nitro/vite builds from this
     server: { entry: "server" },
   },
+  // Outside Lovable's build, target Netlify so `npm run build` produces
+  // a Netlify-compatible server bundle + static assets.
+  nitro: { preset: "netlify" },
 });
