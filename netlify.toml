@@ -1,13 +1,11 @@
 [build]
   command = "npm run build"
-  publish = "dist/public"
+  publish = "dist"
 
-# SPA Routing: Redirect all non-matching routes to index.html
-# This allows TanStack Router to handle client-side routing
-[[redirects]]
-  from = "/*"
-  to = "/index.html"
-  status = 200
+# TanStack Start is SSR. The Nitro `netlify` preset emits a server function
+# under .netlify/functions-internal and static assets under dist. Netlify
+# auto-wires the function; do NOT add a catch-all SPA redirect to index.html
+# or dynamic routes / server functions will be served as static HTML.
 
 # Optional: Configure security headers
 [[headers]]
