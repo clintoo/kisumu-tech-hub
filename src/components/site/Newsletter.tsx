@@ -3,7 +3,8 @@ import { z } from "zod";
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { supabase } from "@/integrations/supabase/client";
+import { useServerFn } from "@tanstack/react-start";
+import { subscribeNewsletter } from "@/lib/submissions.functions";
 import { Mail } from "lucide-react";
 
 const schema = z.object({ email: z.string().trim().email().max(255) });
@@ -11,6 +12,7 @@ const schema = z.object({ email: z.string().trim().email().max(255) });
 export function Newsletter() {
   const [submitting, setSubmitting] = useState(false);
   const [done, setDone] = useState(false);
+  const submit = useServerFn(subscribeNewsletter);
 
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -21,14 +23,15 @@ export function Newsletter() {
       return;
     }
     setSubmitting(true);
-    const { error } = await supabase.from("newsletter_subscribers").insert({ email: parsed.data.email });
-    setSubmitting(false);
-    if (error && !error.message.toLowerCase().includes("duplicate")) {
-      toast.error(error.message);
-      return;
+    try {
+      await submit({ data: { email: parsed.data.email } });
+      setDone(true);
+      toast.success("Subscribed!");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Something went wrong");
+    } finally {
+      setSubmitting(false);
     }
-    setDone(true);
-    toast.success("Subscribed!");
   }
 
   return (

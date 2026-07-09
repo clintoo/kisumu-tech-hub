@@ -101,6 +101,24 @@ export type Database = {
         }
         Relationships: []
       }
+      rate_limits: {
+        Row: {
+          bucket_key: string
+          created_at: string
+          id: number
+        }
+        Insert: {
+          bucket_key: string
+          created_at?: string
+          id?: number
+        }
+        Update: {
+          bucket_key?: string
+          created_at?: string
+          id?: number
+        }
+        Relationships: []
+      }
       registrations: {
         Row: {
           created_at: string
@@ -169,6 +187,10 @@ export type Database = {
     }
     Functions: {
       auto_update_event_statuses: { Args: never; Returns: undefined }
+      check_rate_limit: {
+        Args: { _bucket: string; _max: number; _window: string }
+        Returns: boolean
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
