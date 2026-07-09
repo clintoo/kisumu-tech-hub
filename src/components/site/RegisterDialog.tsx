@@ -5,8 +5,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { supabase } from "@/integrations/supabase/client";
 import type { Event } from "@/lib/events-api";
+import { useServerFn } from "@tanstack/react-start";
+import { registerForEvent } from "@/lib/submissions.functions";
 import { CheckCircle2 } from "lucide-react";
 
 const schema = z.object({
@@ -20,6 +21,7 @@ const schema = z.object({
 export function RegisterDialog({ event, open, onOpenChange }: { event: Event | null; open: boolean; onOpenChange: (v: boolean) => void }) {
   const [submitting, setSubmitting] = useState(false);
   const [done, setDone] = useState(false);
+  const submit = useServerFn(registerForEvent);
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -32,25 +34,24 @@ export function RegisterDialog({ event, open, onOpenChange }: { event: Event | n
       return;
     }
     setSubmitting(true);
-    const { error } = await supabase.from("registrations").insert({
-      event_id: event.id,
-      full_name: parsed.data.full_name,
-      email: parsed.data.email,
-      phone: parsed.data.phone,
-      github_url: parsed.data.github_url || null,
-      linkedin_url: parsed.data.linkedin_url || null,
-    });
-    setSubmitting(false);
-    if (error) {
-      if ((error as { code?: string }).code === "23505" || /duplicate|unique/i.test(error.message)) {
-        toast.error("This email is already registered for this event.");
-      } else {
-        toast.error(error.message);
-      }
-      return;
+    try {
+      await submit({
+        data: {
+          event_id: event.id,
+          full_name: parsed.data.full_name,
+          email: parsed.data.email,
+          phone: parsed.data.phone,
+          github_url: parsed.data.github_url || "",
+          linkedin_url: parsed.data.linkedin_url || "",
+        },
+      });
+      setDone(true);
+      toast.success("You're registered! Check your email for confirmation.");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Registration failed");
+    } finally {
+      setSubmitting(false);
     }
-    setDone(true);
-    toast.success("You're registered!");
   }
 
   function handleOpen(v: boolean) {
