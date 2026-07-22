@@ -2,8 +2,8 @@ name: Pull from Open-Source Repo
 
 on:
   schedule:
-    - cron: "*/15 * * * *"
-  workflow_dispatch: {}
+    - cron: "*/55 * * * *"   # every 15 minutes; adjust as needed
+  workflow_dispatch: {}       # allows manual trigger from the Actions tab
 
 jobs:
   sync:
@@ -13,6 +13,8 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          # Uses the default GITHUB_TOKEN, which already has write
+          # access to THIS repo — no extra secret needed for the push side.
 
       - name: Configure Git user profile
         run: |
@@ -25,14 +27,17 @@ jobs:
           git remote add source https://github.com/kc-clintone/z01k-events.git
           git fetch source main
 
-      - name: Merge/reset to match source
+      - name: Fast-forward merge from source
         run: |
-          # Option A: fast-forward merge (safer, fails if there are conflicts)
+          # Now that histories are unified (via the one-time merge), this
+          # should fast-forward cleanly as long as no one commits directly
+          # to repo A's main outside of this sync.
           git merge source/main --ff-only
-
-          # Option B (alternative): hard reset to mirror source exactly
-          # git reset --hard source/main
 
       - name: Push updates to this repo
         run: |
-          git push origin main
+          if git diff --quiet HEAD origin/main -- 2>/dev/null; then
+            echo "No changes to push."
+          else
+            git push origin main
+          fi
