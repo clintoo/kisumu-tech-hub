@@ -1,0 +1,43 @@
+name: Pull from Open-Source Repo
+
+on:
+  schedule:
+    - cron: "*/55 * * * *"   # every 15 minutes; adjust as needed
+  workflow_dispatch: {}       # allows manual trigger from the Actions tab
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout this repository (destination)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          # Uses the default GITHUB_TOKEN, which already has write
+          # access to THIS repo — no extra secret needed for the push side.
+
+      - name: Configure Git user profile
+        run: |
+          git config --global user.name "GitHub Actions"
+          git config --global user.email "actions@github.com"
+
+      - name: Add source remote and fetch
+        run: |
+          # If the source repo is public, no token is needed here at all.
+          git remote add source https://github.com/kc-clintone/z01k-events.git
+          git fetch source main
+
+      - name: Fast-forward merge from source
+        run: |
+          # Now that histories are unified (via the one-time merge), this
+          # should fast-forward cleanly as long as no one commits directly
+          # to repo A's main outside of this sync.
+          git merge source/main --ff-only
+
+      - name: Push updates to this repo
+        run: |
+          if git diff --quiet HEAD origin/main -- 2>/dev/null; then
+            echo "No changes to push."
+          else
+            git push origin main
+          fi
