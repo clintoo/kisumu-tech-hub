@@ -1,8 +1,9 @@
-import { Calendar, MapPin, Radio } from "lucide-react";
+import { Calendar, MapPin, Radio, Share2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import type { Event } from "@/lib/events-api";
 import { motion } from "framer-motion";
+import { toast } from "sonner";
 
 const categoryLabel: Record<string, string> = {
   workshop: "Workshop",
@@ -13,7 +14,24 @@ const categoryLabel: Record<string, string> = {
 export function EventCard({ event, onRegister }: { event: Event; onRegister: (e: Event) => void }) {
   const isLive = event.status === "live";
   const isCompleted = event.status === "completed";
+  const isCancelled = event.status === "cancelled";
+  const isPostponed = event.status === "postponed";
   const date = new Date(event.date_time);
+
+  async function handleShare() {
+    const url = `${window.location.origin}/events/${event.id}`;
+    const shareData = { title: event.title, text: event.description, url };
+    try {
+      if (navigator.share) {
+        await navigator.share(shareData);
+      } else {
+        await navigator.clipboard.writeText(url);
+        toast.success("Event link copied to clipboard");
+      }
+    } catch {
+      /* user cancelled */
+    }
+  }
 
   return (
     <motion.article
@@ -51,6 +69,12 @@ export function EventCard({ event, onRegister }: { event: Event; onRegister: (e:
           {event.status === "upcoming" && (
             <Badge variant="outline" className="text-[10px] uppercase tracking-wider border-primary/40 text-primary-glow">Upcoming</Badge>
           )}
+          {isPostponed && (
+            <Badge variant="outline" className="text-[10px] uppercase tracking-wider border-yellow-500/50 text-yellow-400">Postponed</Badge>
+          )}
+          {isCancelled && (
+            <Badge variant="outline" className="text-[10px] uppercase tracking-wider border-destructive/60 text-destructive">Cancelled</Badge>
+          )}
         </div>
         <h3 className="font-display text-xl font-bold leading-tight">{event.title}</h3>
         <p className="text-sm text-muted-foreground mt-2 line-clamp-3">{event.description}</p>
@@ -68,15 +92,27 @@ export function EventCard({ event, onRegister }: { event: Event; onRegister: (e:
           )}
         </div>
 
-        {!isCompleted && (
+        <div className="mt-5 flex gap-2">
+          {!isCompleted && !isCancelled && (
+            <Button
+              onClick={() => onRegister(event)}
+              variant={isLive ? "hero" : "outline"}
+              className="flex-1"
+            >
+              {isLive ? "Join Now" : isPostponed ? "Register (Postponed)" : "Register"}
+            </Button>
+          )}
           <Button
-            onClick={() => onRegister(event)}
-            variant={isLive ? "hero" : "outline"}
-            className="mt-5 w-full"
+            onClick={handleShare}
+            variant="outline"
+            size="icon"
+            aria-label="Share event"
+            className={isCompleted || isCancelled ? "flex-1" : ""}
           >
-            {isLive ? "Join Now" : "Register"}
+            <Share2 className="w-4 h-4" />
+            {(isCompleted || isCancelled) && <span className="ml-2 text-sm">Share</span>}
           </Button>
-        )}
+        </div>
       </div>
     </motion.article>
   );

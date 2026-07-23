@@ -9,10 +9,10 @@ export function Footer() {
             <div className="w-8 h-8 rounded-lg bg-gradient-blue flex items-center justify-center font-bold text-primary-foreground">
               Z
             </div>
-            <span className="font-display font-bold text-foreground">Zone01 Kisumu Events</span>
+            <span className="font-display font-bold text-foreground">z01k-events</span>
           </div>
           <p className="text-sm text-muted-foreground max-w-md">
-            Monthly mini-conferences, workshops & meetups for Kisumu's developer community.
+            Monthly mini-conferences, workshops & meetups.
           </p>
         </div>
         <div className="flex items-center gap-5">
@@ -22,15 +22,6 @@ export function Footer() {
             aria-label="Email"
           >
             <Mail className="w-5 h-5" />
-          </a>
-          <a
-            href="https://github.com"
-            target="_blank"
-            rel="noreferrer"
-            className="text-muted-foreground hover:text-primary-glow"
-            aria-label="GitHub"
-          >
-            <Github className="w-5 h-5" />
           </a>
           <a
             href="https://linkedin.com"
@@ -53,8 +44,8 @@ export function Footer() {
         </div>
       </div>
       <div className="mx-auto max-w-7xl px-5 sm:px-8 mt-8 pt-6 border-t border-border/30 text-xs text-muted-foreground/70 flex flex-wrap justify-between gap-2">
-        <span>© {new Date().getFullYear()} Zone01 Kisumu. All rights reserved.</span>
-        <span>Built with care in Kisumu, Kenya.</span>
+        <span>© {new Date().getFullYear()} z01k-events. All rights reserved.</span>
+        <span>Proudly built by dev.wengi</span>
       </div>
     </footer>
   );

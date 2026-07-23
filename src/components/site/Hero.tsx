@@ -24,7 +24,7 @@ export function Hero() {
           transition={{ duration: 0.7, delay: 0.1 }}
           className="mt-6 font-display font-bold leading-[0.95] tracking-tighter text-foreground text-5xl sm:text-7xl md:text-8xl lg:text-9xl max-w-5xl"
         >
-          Where Kisumu's <span className="text-gradient">code meets community</span>.
+          Where code <span className="text-gradient">meets brilliant minds</span>.
         </motion.h1>
 
         <motion.p
@@ -33,7 +33,7 @@ export function Hero() {
           transition={{ duration: 0.6, delay: 0.25 }}
           className="mt-8 text-lg sm:text-xl text-muted-foreground max-w-2xl"
         >
-          Zone01 Kisumu Tech Events runs the city's monthly mini-conferences, workshops and meetups — where developers ship, learn and meet face to face.
+          z01k-events runs monthly mini-conferences, workshops and meetups — where developers ship, learn and meet face to face.
         </motion.p>
 
         <motion.div

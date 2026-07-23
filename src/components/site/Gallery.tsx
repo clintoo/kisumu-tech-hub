@@ -30,7 +30,7 @@ export function Gallery() {
 
         {!isLoading && !isError && images.length === 0 && (
           <div className="mt-8 rounded-xl border border-dashed border-border p-8 text-sm text-muted-foreground">
-            No gallery images yet. They will appear here as soon as an admin adds photos.
+            No gallery images yet.
           </div>
         )}
 

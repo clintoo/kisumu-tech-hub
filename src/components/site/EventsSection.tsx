@@ -17,9 +17,15 @@ export function EventsSection() {
     return category === "all" ? list : list.filter((e) => e.category === category);
   }
 
-  const upcoming = useMemo(() => filter(events.filter((e) => e.status === "upcoming")), [events, category]);
+  const upcoming = useMemo(
+    () => filter(events.filter((e) => e.status === "upcoming" || e.status === "postponed")),
+    [events, category],
+  );
   const live = useMemo(() => filter(events.filter((e) => e.status === "live")), [events, category]);
-  const completed = useMemo(() => filter(events.filter((e) => e.status === "completed")), [events, category]);
+  const completed = useMemo(
+    () => filter(events.filter((e) => e.status === "completed" || e.status === "cancelled")),
+    [events, category],
+  );
 
   function onRegister(e: Event) {
     setSelected(e);
@@ -33,7 +39,7 @@ export function EventsSection() {
           <div>
             <div className="text-xs uppercase tracking-[0.2em] text-primary-glow mb-3">Events</div>
             <h2 className="font-display text-4xl sm:text-5xl md:text-6xl font-bold leading-[1.05] max-w-3xl">
-              What's happening at <span className="text-gradient">Zone01 Kisumu</span>.
+              What's happening at <span className="text-gradient">The Zone</span>.
             </h2>
           </div>
           <Select value={category} onValueChange={setCategory}>
@@ -45,6 +51,7 @@ export function EventsSection() {
               <SelectItem value="mini_conference">Mini Conferences</SelectItem>
               <SelectItem value="workshop">Workshops</SelectItem>
               <SelectItem value="meetup">Meetups</SelectItem>
+              <SelectItem value="Ttalks">Friday Tech Talks</SelectItem>
             </SelectContent>
           </Select>
         </div>

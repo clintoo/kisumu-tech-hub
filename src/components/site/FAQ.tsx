@@ -5,7 +5,7 @@ const faqs = [
   { q: "Do I need prior coding experience?", a: "No. We run beginner-friendly meetups and deeper technical mini-conferences. Pick the events that match where you are today." },
   { q: "Are events free or paid?", a: "All community meetups and mini-conferences are free. Specialised workshops may occasionally cover venue costs — always announced ahead of time." },
   { q: "How often do events happen?", a: "A mini-conference every month, plus smaller meetups and workshops throughout the month." },
-  { q: "How can I contribute or speak at an event?", a: "Reach out via the newsletter signup or contact us directly — we're always looking for speakers, organisers and volunteers." },
+  { q: "How can I contribute or speak at an event?", a: "Reach out via the newsletter signup or contact us directly — we're always looking for speakers and volunteers." },
 ];
 
 export function FAQ() {
