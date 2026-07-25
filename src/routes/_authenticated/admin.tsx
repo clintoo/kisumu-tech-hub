@@ -655,16 +655,53 @@ function GalleryDialog({
   onSaved: () => void;
 }) {
   const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [imageUrl, setImageUrl] = useState<string>(image?.image_url ?? "");
+
+  useEffect(() => {
+    setImageUrl(image?.image_url ?? "");
+  }, [image, open]);
+
+  async function handleFileUpload(file: File) {
+    if (!file.type.startsWith("image/")) {
+      toast.error("Please select an image file");
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("Image must be under 5 MB");
+      return;
+    }
+    setUploading(true);
+    const ext = file.name.split(".").pop() || "jpg";
+    const path = `${crypto.randomUUID()}.${ext}`;
+    const { error: upErr } = await supabase.storage
+      .from("event-images")
+      .upload(path, file, { cacheControl: "3600", upsert: false, contentType: file.type });
+    if (upErr) {
+      setUploading(false);
+      toast.error(upErr.message);
+      return;
+    }
+    const { data: signed, error: sErr } = await supabase.storage
+      .from("event-images")
+      .createSignedUrl(path, 60 * 60 * 24 * 365 * 10);
+    setUploading(false);
+    if (sErr || !signed?.signedUrl) {
+      toast.error(sErr?.message ?? "Could not get image URL");
+      return;
+    }
+    setImageUrl(signed.signedUrl);
+    toast.success("Image uploaded");
+  }
 
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const fd = new FormData(e.currentTarget);
-    const imageUrl = String(fd.get("image_url") || "").trim();
     const caption = String(fd.get("caption") || "").trim() || null;
     const eventDate = String(fd.get("event_date") || "").trim() || null;
 
-    if (!imageUrl) {
-      toast.error("Image URL is required");
+    if (!imageUrl.trim()) {
+      toast.error("Upload an image or paste an image URL");
       return;
     }
 
@@ -672,11 +709,11 @@ function GalleryDialog({
     const { error } = image
       ? await supabase
           .from("gallery_images")
-          .update({ image_url: imageUrl, caption, event_date: eventDate })
+          .update({ image_url: imageUrl.trim(), caption, event_date: eventDate })
           .eq("id", image.id)
       : await supabase
           .from("gallery_images")
-          .insert({ image_url: imageUrl, caption, event_date: eventDate });
+          .insert({ image_url: imageUrl.trim(), caption, event_date: eventDate });
     setSaving(false);
 
     if (error) return toast.error(error.message);
@@ -687,7 +724,7 @@ function GalleryDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-lg">
+      <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="font-display">
             {image ? "Edit gallery image" : "Add gallery image"}
@@ -695,13 +732,38 @@ function GalleryDialog({
         </DialogHeader>
         <form onSubmit={onSubmit} className="space-y-3">
           <div>
-            <Label htmlFor="gallery_image_url">Image URL</Label>
+            <Label>Photo</Label>
+            <div className="mt-2 flex items-center gap-3">
+              <label className="inline-flex items-center gap-2 px-3 py-2 border border-border rounded-md cursor-pointer hover:border-primary/40 text-sm">
+                <Upload className="w-4 h-4" />
+                {uploading ? "Uploading..." : "Upload image"}
+                <input
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  disabled={uploading}
+                  onChange={(e) => {
+                    const f = e.target.files?.[0];
+                    if (f) handleFileUpload(f);
+                    e.target.value = "";
+                  }}
+                />
+              </label>
+              {imageUrl && (
+                <>
+                  <img src={imageUrl} alt="Preview" className="h-14 w-14 object-cover rounded border border-border" />
+                  <Button type="button" size="sm" variant="ghost" onClick={() => setImageUrl("")}>
+                    Remove
+                  </Button>
+                </>
+              )}
+            </div>
             <Input
               id="gallery_image_url"
-              name="image_url"
-              defaultValue={image?.image_url ?? ""}
-              placeholder="https://..."
-              required
+              className="mt-2"
+              value={imageUrl}
+              onChange={(e) => setImageUrl(e.target.value)}
+              placeholder="Or paste image URL"
             />
           </div>
           <div>
@@ -723,7 +785,7 @@ function GalleryDialog({
             />
           </div>
 
-          <Button type="submit" variant="hero" className="w-full" disabled={saving}>
+          <Button type="submit" variant="hero" className="w-full" disabled={saving || uploading}>
             {saving ? "Saving..." : image ? "Save changes" : "Add image"}
           </Button>
         </form>
