@@ -20,6 +20,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { toast } from "sonner";
 import { Pencil, Trash2, Plus, LogOut, Calendar, Users, Image as ImageIcon, Upload, Share2 } from "lucide-react";
 import { fetchEvents, fetchGallery, type Event, type GalleryImage } from "@/lib/events-api";
+import { useServerFn } from "@tanstack/react-start";
+import { setEventStatus as setEventStatusFn } from "@/lib/events.functions";
 
 const STATUS_OPTIONS: Array<{ value: Event["status"]; label: string }> = [
   { value: "upcoming", label: "Upcoming" },
@@ -103,12 +105,16 @@ function AdminPage() {
     qc.invalidateQueries({ queryKey: ["events"] });
   }
 
+  const setStatus = useServerFn(setEventStatusFn);
   async function setEventStatus(ev: Event, next: Event["status"]) {
     if (next === ev.status) return;
-    const { error } = await supabase.from("events").update({ status: next }).eq("id", ev.id);
-    if (error) return toast.error(error.message);
-    toast.success(`Status set to ${next}`);
-    qc.invalidateQueries({ queryKey: ["events"] });
+    try {
+      await setStatus({ data: { event_id: ev.id, status: next } });
+      toast.success(`Status set to ${next}`);
+      qc.invalidateQueries({ queryKey: ["events"] });
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to update status");
+    }
   }
 
   async function shareEvent(ev: Event) {

@@ -19,7 +19,19 @@ export const Route = createFileRoute("/events/$id")({
       .maybeSingle();
     if (error) throw error;
     if (!data) throw notFound();
-    return { event: data as Event };
+    const ev = data as Event;
+    // If event has an end time in the past, treat as completed for UI
+    if (ev.ends_at) {
+      try {
+        const ends = new Date(ev.ends_at);
+        if (new Date() > ends && ev.status !== "completed" && ev.status !== "cancelled") {
+          ev.status = "completed" as Event["status"];
+        }
+      } catch {
+        // ignore parse errors
+      }
+    }
+    return { event: ev };
   },
   head: ({ loaderData }) => {
     const ev = loaderData?.event;
@@ -71,6 +83,8 @@ function EventPage() {
   const isCompleted = event.status === "completed";
   const isCancelled = event.status === "cancelled";
   const isPostponed = event.status === "postponed";
+  const endsAt = event.ends_at ? new Date(event.ends_at) : null;
+  const isEnded = endsAt ? new Date() > endsAt : false;
 
   async function handleShare() {
     const url = window.location.href;
@@ -113,11 +127,16 @@ function EventPage() {
           </div>
           <p className="mt-8 text-lg text-foreground/90 whitespace-pre-wrap">{event.description}</p>
           <div className="mt-10 flex flex-wrap gap-3">
-            {!isCompleted && !isCancelled && (
-              <Button variant="hero" size="lg" onClick={() => setOpen(true)}>
-                {isLive ? "Join Now" : "Register"}
-              </Button>
-            )}
+              {!isCompleted && !isCancelled && !isEnded && (
+                <Button variant="hero" size="lg" onClick={() => setOpen(true)}>
+                  {isLive ? "Join Now" : "Register"}
+                </Button>
+              )}
+              {(isEnded || isCompleted) && (
+                <Button variant="outline" size="lg" disabled>
+                  Registrations closed
+                </Button>
+              )}
             <Button variant="outline" size="lg" onClick={handleShare}>
               <Share2 className="w-4 h-4 mr-2" /> Share
             </Button>

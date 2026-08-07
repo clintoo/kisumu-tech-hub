@@ -23,9 +23,16 @@ export function RegisterDialog({ event, open, onOpenChange }: { event: Event | n
   const [done, setDone] = useState(false);
   const submit = useServerFn(registerForEvent);
 
+  const endsAt = event?.ends_at ? new Date(event.ends_at) : null;
+  const isEnded = endsAt ? new Date() > endsAt : false;
+
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     if (!event) return;
+    if (isEnded) {
+      toast.error("Registrations are closed for this event.");
+      return;
+    }
     const fd = new FormData(e.currentTarget);
     const raw = Object.fromEntries(fd) as Record<string, string>;
     const parsed = schema.safeParse(raw);
@@ -55,6 +62,12 @@ export function RegisterDialog({ event, open, onOpenChange }: { event: Event | n
   }
 
   function handleOpen(v: boolean) {
+    // Prevent opening when the event already ended
+    if (v && event && isEnded) {
+      toast.error("Registrations are closed for this event.");
+      onOpenChange(false);
+      return;
+    }
     if (!v) setDone(false);
     onOpenChange(v);
   }
@@ -71,37 +84,47 @@ export function RegisterDialog({ event, open, onOpenChange }: { event: Event | n
           </div>
         ) : (
           <>
-            <DialogHeader>
-              <DialogTitle className="font-display">Register for {event?.title}</DialogTitle>
-              <DialogDescription>Reserve your spot — it's free.</DialogDescription>
-            </DialogHeader>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div>
-                <Label htmlFor="full_name">Full name</Label>
-                <Input id="full_name" name="full_name" required maxLength={100} />
+            {isEnded ? (
+              <div className="py-8 text-center">
+                <h3 className="font-display text-2xl font-bold">Registrations closed</h3>
+                <p className="text-muted-foreground mt-2 text-sm">This event ended on {endsAt?.toLocaleString()}.</p>
+                <Button className="mt-6" variant="hero" onClick={() => handleOpen(false)}>Close</Button>
               </div>
-              <div>
-                <Label htmlFor="email">Email</Label>
-                <Input id="email" name="email" type="email" required maxLength={255} />
-              </div>
-              <div>
-                <Label htmlFor="phone">Phone</Label>
-                <Input id="phone" name="phone" required maxLength={30} placeholder="+254..." />
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <Label htmlFor="github_url">GitHub (optional)</Label>
-                  <Input id="github_url" name="github_url" placeholder="https://github.com/..." />
-                </div>
-                <div>
-                  <Label htmlFor="linkedin_url">LinkedIn (optional)</Label>
-                  <Input id="linkedin_url" name="linkedin_url" placeholder="https://linkedin.com/in/..." />
-                </div>
-              </div>
-              <Button type="submit" variant="hero" className="w-full" disabled={submitting}>
-                {submitting ? "Registering..." : "Confirm Registration"}
-              </Button>
-            </form>
+            ) : (
+              <>
+                <DialogHeader>
+                  <DialogTitle className="font-display">Register for {event?.title}</DialogTitle>
+                  <DialogDescription>Reserve your spot — it's free.</DialogDescription>
+                </DialogHeader>
+                <form onSubmit={handleSubmit} className="space-y-4">
+                  <div>
+                    <Label htmlFor="full_name">Full name</Label>
+                    <Input id="full_name" name="full_name" required maxLength={100} />
+                  </div>
+                  <div>
+                    <Label htmlFor="email">Email</Label>
+                    <Input id="email" name="email" type="email" required maxLength={255} />
+                  </div>
+                  <div>
+                    <Label htmlFor="phone">Phone</Label>
+                    <Input id="phone" name="phone" required maxLength={30} placeholder="+254..." />
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <Label htmlFor="github_url">GitHub (optional)</Label>
+                      <Input id="github_url" name="github_url" placeholder="https://github.com/..." />
+                    </div>
+                    <div>
+                      <Label htmlFor="linkedin_url">LinkedIn (optional)</Label>
+                      <Input id="linkedin_url" name="linkedin_url" placeholder="https://linkedin.com/in/..." />
+                    </div>
+                  </div>
+                  <Button type="submit" variant="hero" className="w-full" disabled={submitting}>
+                    {submitting ? "Registering..." : "Confirm Registration"}
+                  </Button>
+                </form>
+              </>
+            )}
           </>
         )}
       </DialogContent>

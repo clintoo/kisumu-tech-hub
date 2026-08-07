@@ -12,7 +12,21 @@ export async function fetchEvents(): Promise<Event[]> {
     .select("*")
     .order("date_time", { ascending: true });
   if (error) throw error;
-  return data ?? [];
+  const events = (data ?? []) as Event[];
+  const now = new Date();
+  return events.map((ev) => {
+    if (ev.ends_at) {
+      try {
+        const ends = new Date(ev.ends_at);
+        if (now > ends && ev.status !== "completed" && ev.status !== "cancelled") {
+          return { ...ev, status: "completed" } as Event;
+        }
+      } catch {
+        // ignore parse errors
+      }
+    }
+    return ev;
+  });
 }
 
 export async function fetchGallery(): Promise<GalleryImage[]> {

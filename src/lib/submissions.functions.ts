@@ -71,6 +71,17 @@ export const registerForEvent = createServerFn({ method: "POST" })
     if (event.status === "cancelled") throw new Error("This event has been cancelled.");
     if (event.status === "completed") throw new Error("This event has ended.");
 
+    // If an end time exists and it's in the past, mark event completed and disallow registration
+    if (event.ends_at) {
+      const endsAt = new Date(event.ends_at);
+      const now = new Date();
+      if (now > endsAt) {
+        // mark completed to keep UI in sync
+        await supabaseAdmin.from("events").update({ status: "completed" }).eq("id", data.event_id);
+        throw new Error("This event has ended.");
+      }
+    }
+
     const { error } = await supabaseAdmin.from("registrations").insert({
       event_id: data.event_id,
       full_name: data.full_name,

@@ -17,6 +17,8 @@ export function EventCard({ event, onRegister }: { event: Event; onRegister: (e:
   const isCancelled = event.status === "cancelled";
   const isPostponed = event.status === "postponed";
   const date = new Date(event.date_time);
+  const endsAt = event.ends_at ? new Date(event.ends_at) : null;
+  const isEnded = endsAt ? new Date() > endsAt : false;
 
   async function handleShare() {
     const url = `${window.location.origin}/events/${event.id}`;
@@ -93,13 +95,18 @@ export function EventCard({ event, onRegister }: { event: Event; onRegister: (e:
         </div>
 
         <div className="mt-5 flex gap-2">
-          {!isCompleted && !isCancelled && (
+          {!isCompleted && !isCancelled && !isEnded && (
             <Button
               onClick={() => onRegister(event)}
               variant={isLive ? "hero" : "outline"}
               className="flex-1"
             >
               {isLive ? "Join Now" : isPostponed ? "Register (Postponed)" : "Register"}
+            </Button>
+          )}
+          {(isEnded || isCompleted) && (
+            <Button variant="outline" size="sm" className="flex-1 cursor-not-allowed" disabled>
+              Registrations closed
             </Button>
           )}
           <Button

@@ -53,3 +53,31 @@ If you would like to help but are not sure where to start, a good entry point is
 ## License
 
 This project is licensed under the MIT License. See [LICENSE](LICENSE) for details.
+
+## Scheduled reconciliation (events)
+
+This repository includes a small script and a GitHub Actions workflow that reconcile past events by:
+
+- marking events with `ends_at` in the past as `completed`
+- deleting registrations for those events
+
+Files:
+
+- `scripts/reconcile-events.mjs` — Node script that runs the reconciliation using the Supabase service role key
+- `.github/workflows/reconcile-events.yml` — daily workflow (00:30 UTC) that runs the script and supports manual dispatch
+
+Secrets required (set in GitHub repository Settings → Secrets):
+
+- `SUPABASE_URL` — your Supabase API URL (e.g. `https://xxxxx.supabase.co`)
+- `SUPABASE_SERVICE_ROLE_KEY` — Supabase service role key (keep this secret)
+
+Run locally for testing:
+
+```bash
+SUPABASE_URL=https://your.supabase.url SUPABASE_SERVICE_ROLE_KEY=your_service_role_key node scripts/reconcile-events.mjs
+```
+
+Notes:
+
+- The GitHub Action runs `npm ci` before executing the script; the script uses the Supabase service role key to perform admin operations.
+- If you'd prefer a DB-side scheduled job (pg_cron), I can prepare a SQL migration instead — tell me which you prefer.
